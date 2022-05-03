@@ -34,7 +34,8 @@ def extract_lcms_baf_spectrum_arrays(baf_data, frame_dict, mode, profile_bins, e
 
 # Get either raw (slightly modified implementation that gets centroid spectrum), quasi-profile, or centroid spectrum.
 # Returns an m/z array and intensity array.
-def extract_lcms_tdf_spectrum_arrays(tdf_data, mode, multiscan, frame, scan_begin, scan_end, profile_bins, encoding):
+def extract_lcms_tdf_spectrum_arrays(tdf_data, mode, multiscan, frame, precursor, scan_begin, scan_end, profile_bins,
+                                     encoding):
     if encoding == 32:
         encoding_dtype = np.float32
     elif encoding == 64:
@@ -68,10 +69,14 @@ def extract_lcms_tdf_spectrum_arrays(tdf_data, mode, multiscan, frame, scan_begi
             intensity_array = np.bincount(inverse_indices, weights=intensity_array)
         return mz_array, intensity_array
     elif mode == 'centroid':
-        mz_array, intensity_array = tdf_data.extract_centroided_spectrum_for_frame(frame, scan_begin, scan_end)
-        mz_array = np.array(mz_array, dtype=encoding_dtype)
-        intensity_array = np.array(intensity_array, dtype=encoding_dtype)
-        return mz_array, intensity_array
+        #mz_array, intensity_array = tdf_data.extract_centroided_spectrum_for_frame(frame, scan_begin, scan_end)
+        #mz_array = np.array(mz_array, dtype=encoding_dtype)
+        #intensity_array = np.array(intensity_array, dtype=encoding_dtype)
+        print(frame)
+        #data = tdf_data.read_pasef_centroid_msms_for_frame(frame)
+        data = tdf_data.read_pasef_centroid_msms(precursor)
+        print(data)
+        return data
 
 
 def parse_lcms_baf(baf_data, frame_start, frame_stop, mode, ms2_only, profile_bins, encoding):
@@ -283,41 +288,17 @@ def parse_lcms_tdf(tdf_data, frame_start, frame_stop, mode, ms2_only, exclude_mo
                     pasefframemsmsinfo_dicts = tdf_data.pasefframemsmsinfo[tdf_data.pasefframemsmsinfo['Precursor'] ==
                                                                            precursor_dict['Id']].to_dict(
                         orient='records')
-                    pasef_mz_arrays = []
-                    pasef_intensity_arrays = []
-                    for pasef_dict in pasefframemsmsinfo_dicts:
-                        scan_begin = int(pasef_dict['ScanNumBegin'])
-                        scan_end = int(pasef_dict['ScanNumEnd'])
-                        mz_array, intensity_array = extract_lcms_tdf_spectrum_arrays(tdf_data,
-                                                                                     mode,
-                                                                                     True,
-                                                                                     int(pasef_dict['Frame']),
-                                                                                     scan_begin,
-                                                                                     scan_end,
-                                                                                     profile_bins,
-                                                                                     encoding)
-                        if mz_array.size != 0 and intensity_array.size != 0 and mz_array.size == intensity_array.size:
-                            pasef_mz_arrays.append(mz_array)
-                            pasef_intensity_arrays.append(intensity_array)
-                    if pasef_mz_arrays and pasef_intensity_arrays:
-                        pasef_array = np.stack((np.concatenate(pasef_mz_arrays, axis=None),
-                                                np.concatenate(pasef_intensity_arrays, axis=None)),
-                                               axis=-1)
-                        pasef_array = np.unique(pasef_array[np.argsort(pasef_array[:, 0])], axis=0)
 
-                        mz_acq_range_lower = float(tdf_data.meta_data['MzAcqRangeLower'])
-                        mz_acq_range_upper = float(tdf_data.meta_data['MzAcqRangeUpper'])
-                        bin_size = 0.005
-                        bins = np.arange(mz_acq_range_lower, mz_acq_range_upper, bin_size, dtype=encoding_dtype)
-
-                        unique_indices, inverse_indices = np.unique(np.digitize(pasef_array[:, 0], bins),
-                                                                    return_inverse=True)
-                        bin_counts = np.bincount(inverse_indices)
-                        np.place(bin_counts, bin_counts < 1, [1])
-
-                        mz_array = np.bincount(inverse_indices, weights=pasef_array[:, 0]) / bin_counts
-                        intensity_array = np.bincount(inverse_indices, weights=pasef_array[:, 1])
-
+                    mz_array, intensity_array = extract_lcms_tdf_spectrum_arrays(tdf_data,
+                                                                                 mode,
+                                                                                 True,
+                                                                                 int(pasef_dict['Frame']),
+                                                                                 int(precursor_dict['Id']),
+                                                                                 scan_begin,
+                                                                                 scan_end,
+                                                                                 profile_bins,
+                                                                                 encoding)
+                    if mz_array.size != 0 and intensity_array.size != 0 and mz_array.size == intensity_array.size:
                         base_peak_index = np.where(intensity_array == np.max(intensity_array))
 
                         scan_dict = {'scan_number': None,
