@@ -14,6 +14,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+os.environ['PSIMS_NO_PYNUMPRESS'] = 'True'
 from psims.mzml import MzMLWriter
 from pyimzml.ImzMLWriter import ImzMLWriter
 

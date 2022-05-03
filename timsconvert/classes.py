@@ -1,6 +1,7 @@
 import sqlite3
 import numpy as np
 import pandas as pd
+os.environ['PSIMS_NO_PYNUMPRESS'] = 'True'
 from psims.mzml.components import ParameterContainer, NullMap
 from timsconvert.init_bruker_dll import *
 

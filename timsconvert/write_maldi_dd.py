@@ -3,6 +3,7 @@ from timsconvert.write_mzml import *
 import os
 import logging
 import numpy as np
+os.environ['PSIMS_NO_PYNUMPRESS'] = 'True'
 from psims.mzml import MzMLWriter
 
 
