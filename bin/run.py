@@ -1,4 +1,5 @@
 from timsconvert import *
+import tdf2mzml
 
 
 def run_timsconvert(args):
@@ -112,7 +113,19 @@ def run_timsconvert(args):
                                     run_args['ms2_only'], run_args['exclude_mobility'], run_args['profile_bins'],
                                     run_args['encoding'], run_args['compression'], run_args['chunk_size'])
                 elif run_args['lcms_backend'] == 'tdf2mzml':
-                    tdf2mzml_write_mzml(run_args)
+                    tdf2mzml_args = {'--input': infile,
+                                     '--output': os.path.join(run_args['outdir'], run_args['outfile']),
+                                     '--precision': run_args['precision'],
+                                     '--ms1_threshold': run_args['ms1_threshold'],
+                                     '--ms2_threshold': run_args['ms2_threshold'],
+                                     '--ms2_nlargest': run_args['ms2_nlargest'],
+                                     '--start_frame': run_args['start_frame'],
+                                     '--end_frame': run_args['end_frame'],
+                                     '--ms1_type': run_args['mode'],
+                                     '--compression': run_args['compression']}
+                    if run_args['verbose']:
+                        tdf2mzml_args['debug'] = True
+                    tdf2mzml.write_mzml(tdf2mzml_args)
         elif schema == 'BAF':
             logging.info(get_timestamp() + ':' + '.baf file detected...')
             if run_args['outfile'] == '':

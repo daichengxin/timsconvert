@@ -112,10 +112,11 @@ pip install -r /path/to/timsconvert/requirements.txt
 # TIMSCONVERT server/client dependencies
 pip install -r /path/to/timsconvert/requirements_server.txt
 ```
-8. You will also need to install our forked version of pyimzML, which has added support for ion mobility arrays in imzML
- data from imaging mass spectrometry experiments.
+8. You will also need to install our forked versions of pyimzML, which has added support for ion mobility arrays in 
+imzML data from imaging mass spectrometry experiments, and tdf2mzml.
 ```
 pip install git+https://github.com/gtluu/pyimzML
+pip install git+https://github.com/gtluu/tdf2mzml
 ```
 
 ### Nextflow Workflow

@@ -17,6 +17,10 @@ import pandas as pd
 from psims.mzml import MzMLWriter
 from pyimzml.ImzMLWriter import ImzMLWriter
 
+from tdf2mzml.timsdata import *
+from tdf2mzml.tdf2mzml import *
+
+
 from timsconvert.arguments import *
 from timsconvert.classes import *
 from timsconvert.constants import *
@@ -29,6 +33,3 @@ from timsconvert.write_lcms import *
 from timsconvert.write_maldi_dd import *
 from timsconvert.write_maldi_ims import *
 from timsconvert.write_mzml import *
-
-from tdf2mzml.timsdata import *
-from tdf2mzml.tdf2mzml import *
