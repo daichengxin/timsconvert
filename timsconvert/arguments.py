@@ -18,14 +18,18 @@ def arg_descriptions():
                     'ms2_only': 'Boolean flag that specifies only MS2 spectra should be converted.',
                     'exclude_mobility': 'Boolean flag used to exclude trapped ion mobility spectrometry data from '
                                         'exported data. Precursor ion mobility information is still exported.',
-                    'encoding': 'Choose encoding for binary arrays: 32-bit ("32") or 64-bit ("64"). Defaults to 64-bit.',
-                    'profile_bins': 'Number of bins used to bin data when converting in profile mode. A value of 0'
+                    'encoding': 'Choose encoding for binary arrays: 32-bit ("32") or 64-bit ("64"). Defaults to '
+                                '64-bit.',
+                    'profile_bins': 'Number of bins used to bin data when converting in profile mode. A value of 0 '
                                     'indicates no binning is performed. Defaults to 0.',
+                    'barebones_metadata': 'Only use basic mzML metadata. Use if downstream data analysis tools throw '
+                                          'errors with descriptive CV terms.',
                     'maldi_output_file': 'For MALDI dried droplet data, whether individual scans should be placed in '
-                                         'individual files ("individual") or all into a single file ("combined"). '
-                                         'Defaults to "combined".',
-                    'maldi_plate_map': 'Plate map to be used for parsing spots if --maldi_output_file == "individual". '
-                                       'Should be a .csv file with no header/index.',
+                                         'individual files ("individual"), combined into a single file ("combined"), '
+                                         'or combined by sample label ("sample"). Defaults to "combined".',
+                    'maldi_plate_map': 'Plate map to be used for parsing spots if --maldi_output_file == "individual" '
+                                       'or --maldi_output_file == "sample". Should be a .csv file with no '
+                                       'header/index.',
                     'imzml_mode': 'Whether .imzML files should be written in "processed" or "continuous" mode. '
                                   'Defaults to "processed".',
                     'lcms_backend': 'Choose whether to use "timsconvert" or "tdf2mzml" backend for LC-TIMS-MS/MS data '
@@ -59,7 +63,7 @@ def get_args(server=False):
     optional = parser.add_argument_group('Optional Parameters')
     optional.add_argument('--outdir', help=desc['outdir'], default='', type=str)
     optional.add_argument('--outfile', help=desc['outfile'], default='', type=str)
-    optional.add_argument('--mode', help=desc['mode'], default='centroid', type=str, choices=['raw', 'centroid'])
+    optional.add_argument('--mode', help=desc['mode'], default='centroid', type=str, choices=['raw', 'centroid', 'profile'])
     optional.add_argument('--compression', help=desc['compression'], default='zlib', type=str, choices=['zlib', 'none'])
 
     # TIMSCONVERT Arguments
@@ -67,9 +71,10 @@ def get_args(server=False):
     timsconvert_args.add_argument('--ms2_only', help=desc['ms2_only'], action='store_true')
     timsconvert_args.add_argument('--exclude_mobility', help=desc['exclude_mobility'], action='store_true')
     timsconvert_args.add_argument('--encoding', help=desc['encoding'], default=64, type=int, choices=[32, 64])
-    #timsconvert_args.add_argument('--profile_bins', help=desc['profile_bins'], default=0, type=int)
+    timsconvert_args.add_argument('--barebones_metadata', help=desc['barebones_metadata'], action='store_true')
+    timsconvert_args.add_argument('--profile_bins', help=desc['profile_bins'], default=0, type=int)
     timsconvert_args.add_argument('--maldi_output_file', help=desc['maldi_output_file'], default='combined', type=str,
-                                  choices=['combined', 'individual'])
+                                  choices=['combined', 'individual', 'sample'])
     timsconvert_args.add_argument('--maldi_plate_map', help=desc['maldi_plate_map'], default='', type=str)
     timsconvert_args.add_argument('--imzml_mode', help=desc['imzml_mode'], default='processed', type=str,
                                   choices=['processed', 'continuous'])
@@ -112,7 +117,7 @@ def args_check(args):
     if os.path.splitext(args['outfile']) != '.mzML' and args['outfile'] != '':
         args['outfile'] = args['outfile'] + '.mzML'
     # Check if plate map path is valid and if plate map is available if --maldi_single_file is True.
-    if args['maldi_output_file'] != '' and args['maldi_output_file'] == 'individual':
+    if args['maldi_output_file'] != '' and args['maldi_output_file'] in ['individual', 'sample']:
         if args['maldi_plate_map'] == '':
             logging.info(get_timestamp() + ':' + 'Plate map is required for MALDI dried droplet data...')
             logging.info(get_timestamp() + ':' + 'Exiting...')

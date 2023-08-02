@@ -4,7 +4,7 @@ import logging
 from lxml.etree import parse, XMLParser
 
 
-def write_mzml_metadata(data, writer, infile, mode, ms2_only):
+def write_mzml_metadata(data, writer, infile, mode, ms2_only, barebones_metadata):
     # Basic file descriptions.
     file_description = []
     # Add spectra level and centroid/profile status.
@@ -25,19 +25,20 @@ def write_mzml_metadata(data, writer, infile, mode, ms2_only):
                            id=os.path.splitext(os.path.split(infile)[1])[0])
 
     # Add list of software.
-    acquisition_software_id = data.meta_data['AcquisitionSoftware']
-    acquisition_software_version = data.meta_data['AcquisitionSoftwareVersion']
-    if acquisition_software_id == 'Bruker otofControl':
-        acquisition_software_params = ['micrOTOFcontrol', ]
-    else:
-        acquisition_software_params = []
-    psims_software = {'id': 'psims-writer',
-                      'version': '0.1.2',
-                      'params': ['python-psims', ]}
-    writer.software_list([{'id': acquisition_software_id,
-                           'version': acquisition_software_version,
-                           'params': acquisition_software_params},
-                          psims_software])
+    if not barebones_metadata:
+        acquisition_software_id = data.meta_data['AcquisitionSoftware']
+        acquisition_software_version = data.meta_data['AcquisitionSoftwareVersion']
+        if acquisition_software_id == 'Bruker otofControl':
+            acquisition_software_params = ['micrOTOFcontrol', ]
+        else:
+            acquisition_software_params = []
+        psims_software = {'id': 'psims-writer',
+                          'version': '0.1.2',
+                          'params': ['python-psims', ]}
+        writer.software_list([{'id': acquisition_software_id,
+                               'version': acquisition_software_version,
+                               'params': acquisition_software_params},
+                              psims_software])
 
     # Instrument configuration.
     inst_count = 0
@@ -58,11 +59,12 @@ def write_mzml_metadata(data, writer, infile, mode, ms2_only):
     writer.instrument_configuration_list([inst_config])
 
     # Data processing element.
-    proc_methods = []
-    proc_methods.append(writer.ProcessingMethod(order=1, software_reference='psims-writer',
-                                                params=['Conversion to mzML']))
-    processing = writer.DataProcessing(proc_methods, id='exportation')
-    writer.data_processing_list([processing])
+    if not barebones_metadata:
+        proc_methods = []
+        proc_methods.append(writer.ProcessingMethod(order=1, software_reference='psims-writer',
+                                                    params=['Conversion to mzML']))
+        processing = writer.DataProcessing(proc_methods, id='exportation')
+        writer.data_processing_list([processing])
 
 
 # Calculate the number of spectra to be written.
@@ -77,10 +79,10 @@ def get_spectra_count(data):
     return ms1_count + ms2_count
 
 
-def update_spectra_count(outdir, outfile, scan_count):
-    huge_parser = XMLParser(huge_tree=True)
-    mzml_tree = parse(os.path.join(outdir, outfile), parser=huge_parser)
-    mzml = mzml_tree.getroot()
-    ns = mzml.tag[:mzml.tag.find('}') + 1]
-    mzml.find('.//' + ns + 'spectrumList').set('count', str(scan_count).encode('utf-8'))
-    mzml_tree.write(os.path.join(outdir, outfile), encoding='utf-8', xml_declaration=True)
+def update_spectra_count(outdir, outfile, num_of_spectra, scan_count):
+    with open(os.path.splitext(os.path.join(outdir, outfile))[0] + '_tmp.mzML', 'r') as in_stream, \
+            open(os.path.join(outdir, outfile), 'w') as out_stream:
+        for line in in_stream:
+            out_stream.write(line.replace('      <spectrumList count="' + str(num_of_spectra) + '" defaultDataProcessingRef="exportation">',
+                                          '      <spectrumList count="' + str(scan_count) + '" defaultDataProcessingRef="exportation">'))
+    os.remove(os.path.splitext(os.path.join(outdir, outfile))[0] + '_tmp.mzML')

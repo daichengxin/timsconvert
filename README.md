@@ -9,9 +9,15 @@ data formats (i.e. mzML and imzML) that:
 2. incorporate trapped ion mobility spectrometry (TIMS) data into these open source formats.
 3. do not require any programming experience.
 
+If you use TIMSCONVERT, please cite us:
+
+Gordon T. Luu, Michael A. Freitas, Itzel Lizama-Chamu, Catherine S. McCaughey, Laura M. Sanchez, Mingxun Wang. (2022). 
+TIMSCONVERT: A workflow to convert trapped ion mobility data to open formats. *Bioinformatics*; btac419. 
+DOI: [10.1093/bioinformatics/btac419](https://doi.org/10.1093/bioinformatics/btac419).
+
 #### Examples for file conversion:
 
-- LC-MS(/MS) (BAF) &#8594; mzML
+- LC-MS(/MS) (BAF or TSF) &#8594; mzML
 - LC-TIMS-MS(/MS) (TDF) &#8594; mzML
 - MALDI-MS(/MS) Dried Droplet (TSF) &#8594; mzML
 - MALDI-MS Imaging Mass Spectrometry (TSF) &#8594; imzML
@@ -24,9 +30,7 @@ data formats (i.e. mzML and imzML) that:
 - [Global Natural Products Social (GNPS)](https://gnps.ucsd.edu/)
 - [Cardinal MSI](https://cardinalmsi.org/)
 
-Please note that TIMSCONVERT is still actively under development and new changes are being pushed regularly. For the 
-version of TIMSCONVERT found in our [bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2021.12.09.472024v1), 
-please see the [v1.0.0 branch here on Github](https://github.com/gtluu/timsconvert/tree/manuscript_v1.0.0).
+Please note that TIMSCONVERT is still actively under development and new changes are being pushed regularly.
 
 ## Dimensionality of timsTOF Data
 
@@ -57,12 +61,13 @@ that's required is a GNPS account.
 
 | Acquisition Mode                        | Raw File Format | Converted File Format | Compatible?        |
 |-----------------------------------------|-----------------|-----------------------|--------------------|
-| LC-MS(/MS)                              | .d/BAF             | mzML                  | :x:                |
-| LC-TIMS-MS(/MS)                         | .d/TDF             | mzML                  | :heavy_check_mark: |
-| MALDI-MS(/MS) Dried Droplet             | .d/TSF             | mzML                  | :heavy_check_mark: |
-| MALDI-MS Imaging Mass Spectrometry      | .d/TSF             | imzML                 | :heavy_check_mark: |
-| MALDI-TIMS-MS(/MS) Dried Droplet        | .d/TDF             | mzML                  | :heavy_check_mark: |
-| MALDI-TIMS-MS Imaging Mass Spectrometry | .d/TDF             | imzML                 | :heavy_check_mark: |
+| LC-MS(/MS)                              | .d/BAF          | mzML                  | :x:                |
+| LC-MS(/MS)                              | .d/TSF          | mzML                  | :x:                |
+| LC-TIMS-MS(/MS)                         | .d/TDF          | mzML                  | :heavy_check_mark: |
+| MALDI-MS(/MS) Dried Droplet             | .d/TSF          | mzML                  | :heavy_check_mark: |
+| MALDI-MS Imaging Mass Spectrometry      | .d/TSF          | imzML                 | :heavy_check_mark: |
+| MALDI-TIMS-MS(/MS) Dried Droplet        | .d/TDF          | mzML                  | :heavy_check_mark: |
+| MALDI-TIMS-MS Imaging Mass Spectrometry | .d/TDF          | imzML                 | :heavy_check_mark: |
 
 ### Setting Up Your Local Environment
 
@@ -168,35 +173,37 @@ docker run --rm -it -v /path/to/data:/data timsconvert --input /data --outdir /d
 
 ```
 Required Parameters
---input                   Bruker .d file containing TSF/TDF or directory containing multiple Bruker .d files.
+--input                   Filepath for Bruker .d file containing TSF or TDF file or directory containing multiple 
+                          Bruker .d files.
 
 Optional Parameters
---outdir                  Path to folder in which to write output file(s). Defaults to .d source folder.
---outfile                 User defined filename for output if converting a single file. If input is a folder
-                          with msdultiple .d files, this parameter should not be used as it results in each file
-                          overwriting the previous due to having the same filename.
---mode                    Choose whether to export spectra in "raw" or "centroid" formats. Deafults to
-                          "centroid".
+--outdir                  Path to folder in which to write output file(s). Default = none.
+--outfile                 User defined filename for output if converting a single file, otherwise files will have same 
+                          filename and overwrite each other. Default is none.
+--mode                    Choose whether export to spectra in "raw" or "centroid" formats. Defaults to "centroid".
 --compression             Choose between ZLIB compression ("zlib") or no compression ("none"). Defaults to "zlib".
 
 TIMSCONVERT Optional Parameters
 --ms2_only                Boolean flag that specifies only MS2 spectra should be converted.
 --exclude_mobility        Boolean flag used to exclude trapped ion mobility spectrometry data from exported data. 
-                          Precursor ion mobility information is still exported. Recommended when exporting in profile 
-                          mode due to file size.
---encoding                Choose encoding for binary arrays. 32-bit ("32") or 64-bit ("64"). Defaults to 64-bit.
---maldi_output_file       For MALDI dried droplet data, whether individual scans should be placed in
-                          individual files ("individual") or all into a single file ("combined").
-                          Defaults to combined.
---maldi_plate_map         Plate map to be used for parsing spots if --maldi_output_file == "individual".
-                          Should be a .csv file with no header/index.
---imzml_mode              Whether imzML files should be written in "processed" or "continuous" mode. Defaults
-                          to "processed".
+                          Precursor ion mobility information is still exported.
+--encoding                Choose encoding for binary arrays: 32-bit ("32") or 64-bit ("64"). Defaults to 64-bit.
+--profile_bins            Number of bins used to bin data when converting in profile mode. A value of 0 indicates no 
+                          binning is performed. Defaults to 0.
+--barebones_metadata      Only use basic mzML metadata. Use if downstream data analysis tools throw errors with 
+                          descriptive CV terms.
+--maldi_output_file       For MALDI dried droplet data, whether individual scans should be placed in individual files 
+                          ("individual"), combined into a single file ("combined"), or combined by sample label 
+                          ("sample"). Defaults to "combined".
+--maldi_plate_map         Plate map to be used for parsing spots if --maldi_output_file == "individual" or 
+                          --maldi_output_file == "sample". Should be a .csv file with no header/index.
+--imzml_mode              Whether .imzML files should be written in "processed" or "continuous" mode. Defaults to 
+                          "processed".
 
 TIMSCONVERT System Parameters
 --lcms_backend            Choose whether to use "timsconvert" or "tdf2mzml" backend for LC-TIMS-MS/MS data conversion.
---chunk_size              Relative size of chunks of spectral data that are parsed and subsequently written at
-                          once. 
+--chunk_size              Relative size of chunks of spectral data that are parsed and subsequently written at once. 
+                          Increasing parses and write more spectra at once but increases RAM usage. Default = 10.
 --verbose                 Boolean flag to determine whether to print logging output.
 
 tdf2mzml Optional Parameters
@@ -210,15 +217,23 @@ tdf2mzml Optional Parameters
 
 ## Testing
 
-Get test data
+To test TIMSCONVERT locally:
+
+Download test data
 ```
 cd test
 make download_test
 ```
 
-Run workflow
+To test Python CLI workflow
 ```
+cd test
 make run_test
+```
+
+To test nextflow workflow
+```
+cd test
 make run_nextflow_test
 ```
 
